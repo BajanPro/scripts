@@ -1,5 +1,14 @@
+
+
+
+
+################################################################
+#          Do not modify anything under this line			   #
+################################################################
+
+
 #Remove downloaded certs if they were downloaded previously
-Remove-Item $PSScriptRoot\vcsa-certs -Force -Recurse | Out-Null
+Remove-Item $PSScriptRoot\certs -Force -Recurse 
 
 #Function for unzipping
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -21,8 +30,8 @@ $adminRole=[System.Security.Principal.WindowsBuiltInRole]::Administrator
 # Check to see if we are currently running "as Administrator"
 if ($myWindowsPrincipal.IsInRole($adminRole))
    {
-   # If session is elevated or user is an admin, then continue running.
-   $Host.UI.RawUI.WindowTitle = "Import vCenter CA Certificates - (Elevated)"
+   # If session is elevated or user is admin, then continue running.
+   $Host.UI.RawUI.WindowTitle = "Install vCenter Self Signed Certs - (Elevated)"
    $Host.UI.RawUI.ForegroundColor = "Green" 
    Clear-Host
    }
@@ -35,41 +44,31 @@ else
    Exit
    }
 
-$vCenter = Read-Host -Prompt 'Enter your vCenter FQDN or IP address'   
-Write-Host ""
+$vCenter = Read-Host -Prompt 'Enter your vCenter FQDN or ip address'   
 $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
 
 #Download Certs
-Write-Host "Attempting to download CA certificates from vCenter"
+Write-Host "Downloading CA certificates"
 $url = "https://$vCenter/certs/download"
 $output = "$PSScriptRoot\certs.zip"
 [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
 $webClient = new-object System.Net.WebClient
-Try{$webClient.DownloadFile( $url, $output )}
-Catch{
-Write-Warning -Message "Download failed! Please check vCenter FQDN or IP and try again." 
-$x = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-Exit
-}
+try{$webClient.DownloadFile( $url, $output )}
+catch{write-host "download failed"}
 
 #Unzip certificates
 Write-Host "Unzipping CA certificates"
-Try{Unzip "$PSScriptRoot\certs.zip" "$PSScriptRoot"}
-Catch{
-Write-Warning -Message "Unable to extract certificates, please ensure they downloaded properly and try again." 
-$x = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-Exit
-}
+Unzip "$PSScriptRoot\certs.zip" "$PSScriptRoot"
 
 #Install Certs 
-$certs = Get-ChildItem "$PSScriptRoot\vcsa-certs"
+$certs = Get-ChildItem "$PSScriptRoot\certs"
 ForEach ($cert in $certs) { 
-$ca = "$PSScriptRoot\vcsa-certs\$cert"
+$ca = "$PSScriptRoot\certs\$cert"
 Write-Output "Importing downloaded vCenter certificates into Trusted Root Store"
-	Try{
+	try{
 		$ImportError = certutil -addstore -enterprise -f -v root "$ca"
 	}
-	Catch{
+	catch{
 		Write-Output "certutil failed to import certificate: $ImportError"
 	}
 }
