@@ -41,7 +41,7 @@ $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
 
 #Download Certs
 Write-Host "Attempting to download CA certificates from vCenter"
-$url = "https://$vCenter/vcsa-certs/download"
+$url = "https://$vCenter/certs/download"
 $output = "$PSScriptRoot\certs.zip"
 [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
 $webClient = new-object System.Net.WebClient
