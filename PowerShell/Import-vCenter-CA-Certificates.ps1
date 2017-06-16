@@ -1,5 +1,5 @@
 #Remove downloaded certs if they were downloaded previously
-Remove-Item $PSScriptRoot\certs -Force -Recurse | Out-Null
+Remove-Item $PSScriptRoot\vcsa-certs -Force -Recurse | Out-Null
 
 #Function for unzipping
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -41,7 +41,7 @@ $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
 
 #Download Certs
 Write-Host "Attempting to download CA certificates from vCenter"
-$url = "https://$vCenter/certs/download"
+$url = "https://$vCenter/vcsa-certs/download"
 $output = "$PSScriptRoot\certs.zip"
 [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
 $webClient = new-object System.Net.WebClient
@@ -62,9 +62,9 @@ Exit
 }
 
 #Install Certs 
-$certs = Get-ChildItem "$PSScriptRoot\certs"
+$certs = Get-ChildItem "$PSScriptRoot\vcsa-certs"
 ForEach ($cert in $certs) { 
-$ca = "$PSScriptRoot\certs\$cert"
+$ca = "$PSScriptRoot\vcsa-certs\$cert"
 Write-Output "Importing downloaded vCenter certificates into Trusted Root Store"
 	Try{
 		$ImportError = certutil -addstore -enterprise -f -v root "$ca"
